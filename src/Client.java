@@ -29,6 +29,14 @@ public class Client implements Runnable{
 		return isCoordinator;
 	}
 	
+	public Client(int id) throws SocketException, UnknownHostException{
+		this.id = id;
+		socket = new DatagramSocket();
+		socket.setBroadcast(true);
+		address = this.listAllBroadcastAddresses().get(0);
+		socket.setSoTimeout(3000);
+	}
+	
 	public void run(){
 		
 		boolean running = true;
@@ -42,18 +50,12 @@ public class Client implements Runnable{
 				continue;
 			}
 			
+			this.listen();
+			
 		}
 		scanner.close();
 		socket.close();
 		
-	}
-	
-	public Client(int id) throws SocketException, UnknownHostException{
-		this.id = id;
-		socket = new DatagramSocket();
-		socket.setBroadcast(true);
-		address = this.listAllBroadcastAddresses().get(0);
-		socket.setSoTimeout(3000);
 	}
 	
 	public void sendMessage(String msg) {
@@ -68,10 +70,6 @@ public class Client implements Runnable{
 		}
 	}
 	
-	public void close(){
-		socket.close();
-	}
-	
 	public void askForCoordinator() throws IOException {
 		String msg = "who is the coordinator?";
 		this.sendMessage(msg);
@@ -82,6 +80,21 @@ public class Client implements Runnable{
 		catch(SocketTimeoutException e) {
 			this.startElection();
 		}
+	}
+	
+	public DatagramPacket listen() {
+		DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+		try {
+			socket.receive(packet);
+			answerMessage(packet.getData());
+		}
+		catch(SocketTimeoutException e) {
+			System.out.println("Client " + this.id + ": nothing happened...");
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+		return packet;
 	}
 	
 	public void answerMessage(byte[] msg) {
@@ -116,6 +129,10 @@ public class Client implements Runnable{
 	          .forEach(broadcastList::add);
 	    }
 	    return broadcastList;
+	}
+	
+	public void close(){
+		socket.close();
 	}
 	
 }
