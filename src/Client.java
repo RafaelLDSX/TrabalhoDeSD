@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
-import java.util.Scanner;
+import java.util.Random;
 
 
 public class Client implements Runnable{
@@ -18,8 +18,11 @@ public class Client implements Runnable{
 	private final int id;
 	private boolean isCoordinator;
 	private DatagramSocket socket;
-	private InetAddress address;
+	private DatagramPacket packet;
+	private List<InetAddress> broadcastAddresses;
 	private byte[] buffer;
+	private Status status;
+	
 	
 	public int getId() {
 		return this.id;
@@ -31,65 +34,66 @@ public class Client implements Runnable{
 	
 	public Client(int id) throws SocketException, UnknownHostException{
 		this.id = id;
-		socket = new DatagramSocket();
+		buffer = new byte[500];
+		socket = new DatagramSocket(25565);
 		socket.setBroadcast(true);
-		address = this.listAllBroadcastAddresses().get(0);
+		broadcastAddresses = this.listAllBroadcastAddresses();
 		socket.setSoTimeout(3000);
+		packet = new DatagramPacket(buffer, buffer.length);
+		status = Status.NORMAL;
+		isCoordinator = false;
 	}
 	
 	public void run(){
 		
 		boolean running = true;
-		Scanner scanner = new Scanner(System.in);
+		Random random = new Random();
+		
 		while(running){
-			String msg = scanner.nextLine();
-			sendMessage(msg);
-			
-			if(msg.equals("end")){
-				running = false;
-				continue;
+			switch(this.status) {
+			case NORMAL:
+				this.listen();
+				if(random.ints(0, 4).findFirst().getAsInt() == 1) {
+					this.askForCoordinator();
+				}
+				break;
+			case ELECTION:
+				this.listen();
 			}
 			
-			this.listen();
 			
 		}
-		scanner.close();
 		socket.close();
 		
 	}
 	
+	//passando a mensagem, envia-a em broadcast
 	public void sendMessage(String msg) {
 		buffer = msg.getBytes();
-		DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, 25565);
-		
+
 		try{
-			socket.send(packet);
+			packet.setPort(25565);
+			
+			for(InetAddress address : broadcastAddresses) {
+				packet.setAddress(address);
+				socket.send(packet);
+			}
+			
 		}
 		catch(IOException e){
 			System.out.println(e.getMessage());
 		}
 	}
 	
-	public void askForCoordinator() throws IOException {
-		String msg = "who is the coordinator?";
-		this.sendMessage(msg);
-		DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-		try {
-		 	socket.receive(packet);
-		}
-		catch(SocketTimeoutException e) {
-			this.startElection();
-		}
-	}
-	
+	//espera uma mensagem por um tempo e a processa se recebida
 	public DatagramPacket listen() {
-		DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+		System.out.println("Client " + this.id + ": listening...");
 		try {
 			socket.receive(packet);
 			answerMessage(packet.getData());
 		}
 		catch(SocketTimeoutException e) {
-			System.out.println("Client " + this.id + ": nothing happened...");
+			System.out.println("Client " + this.id + ": No message received");
 		}
 		catch (IOException e) {
 			e.printStackTrace();
@@ -97,21 +101,54 @@ public class Client implements Runnable{
 		return packet;
 	}
 	
+	//pergunta pelo coordenador e, caso não obtenha resposta, começa uma eleição
+	public void askForCoordinator() {
+		System.out.println("Client " + this.id + ": who is the coordinator?");
+		String msg = "who is the coordinator?";
+		this.sendMessage(msg);
+		try {
+			socket.setSoTimeout(3500);
+		} catch (SocketException e1) {
+			e1.printStackTrace();
+		}
+		try {
+		 	socket.receive(packet);
+		}
+		catch(SocketTimeoutException e) {
+			this.startElection();
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	//processa mensagens
 	public void answerMessage(byte[] msg) {
 		String parsedMessage = new String(msg);
 		switch(parsedMessage) {
-		case "who is the coordinator":
+		case "who is the coordinator?":
 			if(this.IsCoordinator()) {
+				System.out.println("Client " + this.id + ": I am, my id is " + this.id);
 				this.sendMessage("I am, my id is " + this.id);
+			}
+			else{
+				System.out.println("Client " + this.id + ": Not me!");
 			}
 			break;
 		}
 	}
 	
+	//começa a eleição
 	public void startElection() {
-
+		this.status = Status.ELECTION;
+		System.out.println("Client " + this.id + ": Election START!...");
 	}
 	
+	public void close(){
+		socket.close();
+	}
+	
+	//procura pelos endereços de broadcast da rede
 	List<InetAddress> listAllBroadcastAddresses() throws SocketException {
 	    List<InetAddress> broadcastList = new ArrayList<>();
 	    Enumeration<NetworkInterface> interfaces 
@@ -129,10 +166,6 @@ public class Client implements Runnable{
 	          .forEach(broadcastList::add);
 	    }
 	    return broadcastList;
-	}
-	
-	public void close(){
-		socket.close();
 	}
 	
 }
