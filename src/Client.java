@@ -6,6 +6,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -69,7 +70,7 @@ public class Client implements Runnable{
 	
 	//passando a mensagem, envia-a em broadcast
 	public void sendMessage(String msg) {
-		buffer = msg.getBytes();
+		buffer = msg.getBytes(Charset.forName("UTF-8"));
 
 		try{
 			packet.setPort(25565);
@@ -89,8 +90,10 @@ public class Client implements Runnable{
 	public DatagramPacket listen() {
 		System.out.println("Client " + this.id + ": listening...");
 		try {
-			socket.receive(packet);
-			answerMessage(packet.getData());
+			byte[] buf = new byte[512];
+			DatagramPacket pkt = new DatagramPacket(buf, buf.length);
+			socket.receive(pkt);
+			answerMessage(pkt.getData());
 		}
 		catch(SocketTimeoutException e) {
 			System.out.println("Client " + this.id + ": No message received");
@@ -101,7 +104,7 @@ public class Client implements Runnable{
 		return packet;
 	}
 	
-	//pergunta pelo coordenador e, caso não obtenha resposta, começa uma eleição
+	//pergunta pelo coordenador e, caso nao obtenha resposta, comeca uma eleicao
 	public void askForCoordinator() {
 		System.out.println("Client " + this.id + ": who is the coordinator?");
 		String msg = "who is the coordinator?";
@@ -113,6 +116,7 @@ public class Client implements Runnable{
 		}
 		try {
 		 	socket.receive(packet);
+		 	System.out.println("Message received: " + new String(packet.getData()));
 		}
 		catch(SocketTimeoutException e) {
 			this.startElection();
@@ -124,7 +128,8 @@ public class Client implements Runnable{
 	
 	//processa mensagens
 	public void answerMessage(byte[] msg) {
-		String parsedMessage = new String(msg);
+		String parsedMessage = new String(msg, Charset.forName("UTF-8"));
+		System.out.println("Message: " + msg);
 		switch(parsedMessage) {
 		case "who is the coordinator?":
 			if(this.IsCoordinator()) {
@@ -133,12 +138,13 @@ public class Client implements Runnable{
 			}
 			else{
 				System.out.println("Client " + this.id + ": Not me!");
+				this.sendMessage("Client " + this.id + ": Not me!");
 			}
 			break;
 		}
 	}
 	
-	//começa a eleição
+	//comeca a eleicao
 	public void startElection() {
 		this.status = Status.ELECTION;
 		System.out.println("Client " + this.id + ": Election START!...");
@@ -148,7 +154,7 @@ public class Client implements Runnable{
 		socket.close();
 	}
 	
-	//procura pelos endereços de broadcast da rede
+	//procura pelos enderecos de broadcast da rede
 	List<InetAddress> listAllBroadcastAddresses() throws SocketException {
 	    List<InetAddress> broadcastList = new ArrayList<>();
 	    Enumeration<NetworkInterface> interfaces 
