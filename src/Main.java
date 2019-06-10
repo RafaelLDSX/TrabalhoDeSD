@@ -6,7 +6,7 @@ public class Main {
 
 	public static void main(String[] args) throws SocketException, UnknownHostException {
 		
-		Thread t1 = new Thread(new Client(1));
+		Thread t1 = new Thread(new Client(2));
 		
 		t1.start();
 
