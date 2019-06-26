@@ -19,6 +19,8 @@ import parser.Parser;
 import states.NoElection;
 import states.State;
 
+import static java.lang.Thread.sleep;
+
 
 public class Client implements Runnable{
 	
@@ -29,6 +31,8 @@ public class Client implements Runnable{
 	private List<InetAddress> broadcastAddresses;
 	private byte[] buffer;
 	private State state;
+	private Clock clock;
+	private Thread clockThread;
 	
 	
 	public int getId() {
@@ -48,26 +52,41 @@ public class Client implements Runnable{
 		packet = new DatagramPacket(buffer, buffer.length);
 		isCoordinator = false; //talvez suma pq estado
 		state = new NoElection(); // talvez suma pq estado
+		clock = new Clock(id);
+		clockThread = new Thread(clock);
+		clockThread.start();
 	}
 	
 	public void run(){
 		
 		boolean running = true;
 		Random random = new Random();
-		
+
+		/*
+		while(true){
+			System.out.println("Relogiao" + clock.getCounter());
+			try {
+				sleep(3000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		*/
+
 		while(running){
 			this.ask();
 			this.listen();
 		}
+
 		socket.close();
-		
+
 	}
 	
 	public void ask() {
 		String toSend = state.ask();
 		if(toSend != null) {
-			if(toSend.contains("#")) {
-				toSend.replace("#", this.id.toString() );
+			if(toSend.contains("ID")) {
+				toSend.replace("ID", this.id.toString() );
 			}
 		//TODO send message()
 		}
@@ -76,22 +95,33 @@ public class Client implements Runnable{
 	public void answer(String msg) {
 		String toSend = state.answer(msg);
 		if(toSend != null) {
-			int hisId = Integer.parseInt(toSend);
-			if(hisId < this.id){	
-				toSend = "Venci!";
+			if(toSend.contains("RELOGIO")) {
+				toSend.replace("RELOGIO", clock.getCounter().toString() );
+			}
+			else if (toSend != "Eu sou o coordenador") { // Entao ta recebendo um id
+				int hisId = Integer.parseInt(toSend);
+				if (hisId < this.id) {
+					toSend = state.ask(); // Envia novamente o id maior dele
+				} else {
+					changeState(); // Mudar estado para NotCoordinator
+					toSend = null;
+				}
+			}
+			if(toSend != null) {
 				//TODO send message()
 			}
 		}
 	}
+
 	
 	public void listen() {
 		//TODO wait time T to assume failure
+		//Call changeState() sometimes
 	}
 	
 	public void changeState() {
 		//TODO if state == noElection, next state = Election
 		//TODO if state == Election, next state = Coordinator
-		//TODO else if state == ELection, next state = NotCoordinator
+		//TODO else if state == Election, next state = NotCoordinator
 	}
-	
 }
