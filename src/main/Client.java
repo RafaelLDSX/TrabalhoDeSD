@@ -46,8 +46,8 @@ public class Client implements Runnable{
 		socket.setBroadcast(true);
 		socket.setSoTimeout(3000);
 		packet = new DatagramPacket(buffer, buffer.length);
-		isCoordinator = false;
-		state = new NoElection();
+		isCoordinator = false; //talvez suma pq estado
+		state = new NoElection(); // talvez suma pq estado
 	}
 	
 	public void run(){
@@ -56,7 +56,6 @@ public class Client implements Runnable{
 		Random random = new Random();
 		
 		while(running){
-			
 			this.ask();
 			this.listen();
 		}
@@ -70,19 +69,29 @@ public class Client implements Runnable{
 			if(toSend.contains("#")) {
 				toSend.replace("#", this.id.toString() );
 			}
-			//send message
+		//TODO send message()
 		}
 	}
 	
 	public void answer(String msg) {
 		String toSend = state.answer(msg);
 		if(toSend != null) {
-			//send message
+			int hisId = Integer.parseInt(toSend);
+			if(hisId < this.id){	
+				toSend = "Venci!";
+				//TODO send message()
+			}
 		}
 	}
 	
 	public void listen() {
-		
+		//TODO wait time T to assume failure
+	}
+	
+	public void changeState() {
+		//TODO if state == noElection, next state = Election
+		//TODO if state == Election, next state = Coordinator
+		//TODO else if state == ELection, next state = NotCoordinator
 	}
 	
 }
