@@ -5,7 +5,7 @@ import static java.lang.Thread.sleep;
 public class Clock implements Runnable{
 
     int id;
-    Integer counter = 0;
+    Double counter = 0.0;
 
     Clock(int id){
         this.id = id;
@@ -25,7 +25,7 @@ public class Clock implements Runnable{
 
     }
 
-    public Integer getCounter(){
+    public Double getCounter(){
         return counter;
     }
 }

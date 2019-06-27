@@ -98,16 +98,11 @@ public class Client implements Runnable{
 			if(toSend.contains("RELOGIO")) {
 				toSend.replace("RELOGIO", clock.getCounter().toString() );
 			}
-			else if (toSend != "Eu sou o coordenador") { // Entao ta recebendo um id
-				int hisId = Integer.parseInt(toSend);
-				if (hisId < this.id) {
-					toSend = state.ask(); // Envia novamente o id maior dele
-				} else {
-					changeState(); // Mudar estado para NotCoordinator
-					toSend = null;
-				}
+			else if (toSend == "Perdi") { 
+				changeState(); // Mudar estado para NotCoordinator
+				toSend = null;
 			}
-			if(toSend != null) {
+			if(toSend != null) { // I WANT THIS GONE
 				//TODO send message()
 			}
 		}

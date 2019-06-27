@@ -3,8 +3,8 @@ package states;
 public class Coordinator implements State{
 	private int clientId;
 	private boolean berkFlag = false;
-	private int notCoordCouter = 0;
-	private int notCoordClockSum = 0;
+	private int notCoordCounter = 0;
+	private Double notCoordClockSum = 0.0;
 
 	public Coordinator(int clientId) {
 		this.clientId = clientId;
@@ -21,21 +21,28 @@ public class Coordinator implements State{
 		else if(msg.contains("Meu relogio e")) {
 			int opennedBracketIndex = msg.indexOf("[");
 			int closedBracketIndex = msg.indexOf("]");
-			averageClock(Integer.parseInt(msg.substring(opennedBracketIndex, closedBracketIndex)));
+			countClock(Double.parseDouble(msg.substring(opennedBracketIndex, closedBracketIndex)));
 		}
 		return null;
 	}
 
-	public void averageClock(int recivedClock) {
+	public void countClock(Double recivedClock) {
 		if(this.berkFlag == true) {
-			this.notCoordCouter += 1;
+			this.notCoordCounter += 1;
 			this.notCoordClockSum += recivedClock;
 		}
 		else if(this.berkFlag == false) {
 			this.berkFlag = true;
-			this.notCoordCouter = 1;
+			this.notCoordCounter = 1;
 			this.notCoordClockSum = recivedClock;
 		}
+	}
+	
+	public Double averageClock() {
+		if(this.berkFlag == true) {
+			return this.notCoordCounter/this.notCoordClockSum;
+		}
+		return null; //TODO treatment if flag is false
 	}
 	// Sometime this you be used, must be implemented a chance to end the berkley mode
 	public void resetBerkFlag() {
