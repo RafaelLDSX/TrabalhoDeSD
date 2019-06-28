@@ -30,9 +30,7 @@ public class Client implements Runnable{
 	private final Integer id;
 	private boolean isCoordinator;
 	private DatagramSocket socket;
-	private DatagramPacket packet;
 	private List<InetAddress> broadcastAddresses;
-	private byte[] buffer;
 	private State state;
 	private Clock clock;
 	private Thread clockThread;
@@ -48,12 +46,10 @@ public class Client implements Runnable{
 	
 	public Client(int id) throws SocketException, UnknownHostException{
 		this.id = id;
-		buffer = new byte[500];
 		socket = new DatagramSocket(25565);
 		socket.setBroadcast(true);
 		socket.setSoTimeout(3000);
-		packet = new DatagramPacket(buffer, buffer.length);
-		isCoordinator = false; //talvez suma pq estado
+		broadcastAddresses = this.listAllBroadcastAddresses();
 		state = new NoElection(); 
 		clock = new Clock(id);
 		clockThread = new Thread(clock);
@@ -76,20 +72,25 @@ public class Client implements Runnable{
 		}
 		*/
 
-		while(running){
-			this.ask();
-			this.listen();
-			/*
-			 * if(this.state == Coordinator) {
-			 * 		if(this.state.berkFlag == false) {
-			 * 			state.ask();
-			 * 		}
-			 * 		else if(this.state.berkFlag == true) {
-			 * 			state.averageClock(clock);
-			 * 		}
-			 * }
-			 */
+//		while(running){
+//			this.ask();
+//			this.listen();
+//			
+//			if(this.state == Coordinator) {
+//				if(this.state.berkFlag == false) {
+//					state.ask();
+//			  	}
+//			  	else if(this.state.berkFlag == true) {
+//			 		state.averageClock(clock);
+//			  	}
+//			}
+//			 
+//		}
+		
+		for(InetAddress i : broadcastAddresses) {
+			this.sendMessage("alou", i);
 		}
+		
 
 		socket.close();
 
@@ -138,5 +139,34 @@ public class Client implements Runnable{
 			//TODO exception
 		}		
 		
+	}
+	
+	public void sendMessage(String msg, InetAddress address) {
+		byte[] msgInBytes = Parser.toBytes(msg);
+		DatagramPacket packet = new DatagramPacket(msgInBytes, msgInBytes.length, address, 25565);
+		try {
+			this.socket.send(packet);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	List<InetAddress> listAllBroadcastAddresses() throws SocketException {
+	    List<InetAddress> broadcastList = new ArrayList<>();
+	    Enumeration<NetworkInterface> interfaces 
+	      = NetworkInterface.getNetworkInterfaces();
+	    while (interfaces.hasMoreElements()) {
+	        NetworkInterface networkInterface = interfaces.nextElement();
+	 
+	        if (networkInterface.isLoopback() || !networkInterface.isUp()) {
+	            continue;
+	        }
+	 
+	        networkInterface.getInterfaceAddresses().stream() 
+	          .map(a -> a.getBroadcast())
+	          .filter(Objects::nonNull)
+	          .forEach(broadcastList::add);
+	    }
+	    return broadcastList;
 	}
 }
