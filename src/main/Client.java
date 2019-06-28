@@ -16,7 +16,10 @@ import java.util.Objects;
 import java.util.Random;
 
 import parser.Parser;
+import states.Coordinator;
+import states.Election;
 import states.NoElection;
+import states.NotCoordinator;
 import states.State;
 
 import static java.lang.Thread.sleep;
@@ -51,7 +54,7 @@ public class Client implements Runnable{
 		socket.setSoTimeout(3000);
 		packet = new DatagramPacket(buffer, buffer.length);
 		isCoordinator = false; //talvez suma pq estado
-		state = new NoElection(); // talvez suma pq estado
+		state = new NoElection(); 
 		clock = new Clock(id);
 		clockThread = new Thread(clock);
 		clockThread.start();
@@ -64,7 +67,7 @@ public class Client implements Runnable{
 
 		/*
 		while(true){
-			System.out.println("Relogiao" + clock.getCounter());
+			System.out.println("Relogio" + clock.getCounter());
 			try {
 				sleep(3000);
 			} catch (InterruptedException e) {
@@ -76,6 +79,16 @@ public class Client implements Runnable{
 		while(running){
 			this.ask();
 			this.listen();
+			/*
+			 * if(this.state == Coordinator) {
+			 * 		if(this.state.berkFlag == false) {
+			 * 			state.ask();
+			 * 		}
+			 * 		else if(this.state.berkFlag == true) {
+			 * 			state.averageClock(clock);
+			 * 		}
+			 * }
+			 */
 		}
 
 		socket.close();
@@ -94,29 +107,36 @@ public class Client implements Runnable{
 	
 	public void answer(String msg) {
 		String toSend = state.answer(msg);
+		if(toSend.contains("RELOGIO")) {
+			toSend.replace("RELOGIO", clock.getCounter().toString() );
+		}
+		else if (toSend.equals("Perdi")) { 
+			changeState("NotCoordinator");
+			toSend = null;
+		}
 		if(toSend != null) {
-			if(toSend.contains("RELOGIO")) {
-				toSend.replace("RELOGIO", clock.getCounter().toString() );
-			}
-			else if (toSend == "Perdi") { 
-				changeState(); // Mudar estado para NotCoordinator
-				toSend = null;
-			}
-			if(toSend != null) { // I WANT THIS GONE
-				//TODO send message()
-			}
+			//TODO send message()
 		}
 	}
 
-	
 	public void listen() {
 		//TODO wait time T to assume failure
 		//Call changeState() sometimes
 	}
 	
-	public void changeState() {
-		//TODO if state == noElection, next state = Election
-		//TODO if state == Election, next state = Coordinator
-		//TODO else if state == Election, next state = NotCoordinator
+	public void changeState(String nextState) {
+		if(nextState.equals("Election")) {
+			state = new Election(this.id);
+		}
+		else if(nextState.equals("NotCoordinator")) {
+			state = new NotCoordinator();
+		}
+		else if(nextState.equals("Coordinator")) {
+			state = new Coordinator(this.id);
+		}
+		else {
+			//TODO exception
+		}		
+		
 	}
 }

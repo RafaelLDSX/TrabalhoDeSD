@@ -8,7 +8,7 @@ public class NotCoordinator implements State{
 	}
 
 	public String answer(String msg) {
-		if(msg == "Qual seu relogio?") {
+		if(msg.equals("Qual seu relogio?")) {
 			return "Meu relogio e [RELOGIO]";
 		}
 		return null;

@@ -15,7 +15,7 @@ public class Coordinator implements State{
 	}
 	
 	public String answer(String msg) {
-		if (msg == "quem e o coordenador?") {
+		if (msg.equals("Quem e o coordenador?")) {
 			return "Eu sou o coordenador";
 		}
 		else if(msg.contains("Meu relogio e")) {
@@ -25,7 +25,8 @@ public class Coordinator implements State{
 		}
 		return null;
 	}
-
+	
+	// The methods below will be used for calculating the new clock 
 	public void countClock(Double recivedClock) {
 		if(this.berkFlag == true) {
 			this.notCoordCounter += 1;
@@ -38,9 +39,9 @@ public class Coordinator implements State{
 		}
 	}
 	
-	public Double averageClock() {
+	public Double averageClock(Double coordClock) {
 		if(this.berkFlag == true) {
-			return this.notCoordCounter/this.notCoordClockSum;
+			return (coordClock+this.notCoordClockSum)/(this.notCoordCounter+1);
 		}
 		return null; //TODO treatment if flag is false
 	}
