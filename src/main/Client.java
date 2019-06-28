@@ -48,8 +48,8 @@ public class Client implements Runnable{
 		this.id = id;
 		socket = new DatagramSocket(25565);
 		socket.setBroadcast(true);
-		socket.setSoTimeout(3000);
-		broadcastAddresses = this.listAllBroadcastAddresses();
+//		socket.setSoTimeout(3000);
+//		broadcastAddresses = this.listAllBroadcastAddresses();
 		state = new NoElection(); 
 		clock = new Clock(id);
 		clockThread = new Thread(clock);
@@ -87,10 +87,10 @@ public class Client implements Runnable{
 //			 
 //		}
 		
-		for(InetAddress i : broadcastAddresses) {
-			this.sendMessage("alou", i);
-		}
-		
+//		for(InetAddress i : broadcastAddresses) {
+//			this.sendMessage("alou", i);
+//		}
+		this.listen();
 
 		socket.close();
 
@@ -121,8 +121,17 @@ public class Client implements Runnable{
 	}
 
 	public void listen() {
-		//TODO wait time T to assume failure
-		//Call changeState() sometimes
+		byte[] buf = new byte[255];
+		DatagramPacket packet = new DatagramPacket(buf, buf.length);
+		try {
+			System.out.println("Ouvindo");
+			this.socket.receive(packet);
+			System.out.println("Ouvi");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		System.out.println(Parser.toString(packet.getData()));
+		
 	}
 	
 	public void changeState(String nextState) {
@@ -151,22 +160,22 @@ public class Client implements Runnable{
 		}
 	}
 	
-	List<InetAddress> listAllBroadcastAddresses() throws SocketException {
-	    List<InetAddress> broadcastList = new ArrayList<>();
-	    Enumeration<NetworkInterface> interfaces 
-	      = NetworkInterface.getNetworkInterfaces();
-	    while (interfaces.hasMoreElements()) {
-	        NetworkInterface networkInterface = interfaces.nextElement();
-	 
-	        if (networkInterface.isLoopback() || !networkInterface.isUp()) {
-	            continue;
-	        }
-	 
-	        networkInterface.getInterfaceAddresses().stream() 
-	          .map(a -> a.getBroadcast())
-	          .filter(Objects::nonNull)
-	          .forEach(broadcastList::add);
-	    }
-	    return broadcastList;
-	}
+//	List<InetAddress> listAllBroadcastAddresses() throws SocketException {
+//	    List<InetAddress> broadcastList = new ArrayList<>();
+//	    Enumeration<NetworkInterface> interfaces 
+//	      = NetworkInterface.getNetworkInterfaces();
+//	    while (interfaces.hasMoreElements()) {
+//	        NetworkInterface networkInterface = interfaces.nextElement();
+//	 
+//	        if (networkInterface.isLoopback() || !networkInterface.isUp()) {
+//	            continue;
+//	        }
+//	 
+//	        networkInterface.getInterfaceAddresses().stream() 
+//	          .map(a -> a.getBroadcast())
+//	          .filter(Objects::nonNull)
+//	          .forEach(broadcastList::add);
+//	    }
+//	    return broadcastList;
+//	}
 }
