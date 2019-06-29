@@ -15,12 +15,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 
-import parser.Parser;
 import states.Coordinator;
 import states.Election;
 import states.NoElection;
 import states.NotCoordinator;
 import states.State;
+import util.Logger;
+import util.Parser;
 
 import static java.lang.Thread.sleep;
 
@@ -34,6 +35,7 @@ public class Client implements Runnable{
 	private State state;
 	private Clock clock;
 	private Thread clockThread;
+	private Logger logger;
 	
 	
 	public int getId() {
@@ -49,11 +51,12 @@ public class Client implements Runnable{
 		socket = new DatagramSocket(25565);
 		socket.setBroadcast(true);
 //		socket.setSoTimeout(3000);
-//		broadcastAddresses = this.listAllBroadcastAddresses();
+		broadcastAddresses = this.listAllBroadcastAddresses();
 		state = new NoElection(); 
 		clock = new Clock(id);
 		clockThread = new Thread(clock);
 		clockThread.start();
+		logger = new Logger();
 	}
 	
 	public void run(){
@@ -90,7 +93,7 @@ public class Client implements Runnable{
 //		for(InetAddress i : broadcastAddresses) {
 //			this.sendMessage("alou", i);
 //		}
-		this.listen();
+		this.ask();
 
 		socket.close();
 
@@ -102,7 +105,9 @@ public class Client implements Runnable{
 			if(toSend.contains("ID")) {
 				toSend.replace("ID", this.id.toString() );
 			}
-		//TODO send message()
+			for(InetAddress i : this.broadcastAddresses) {
+				this.sendMessage(toSend, i);
+			}
 		}
 	}
 	
@@ -126,11 +131,10 @@ public class Client implements Runnable{
 		try {
 			System.out.println("Ouvindo");
 			this.socket.receive(packet);
-			System.out.println("Ouvi");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		System.out.println(Parser.toString(packet.getData()));
+		this.logger.log("IN - " + Parser.toString(packet.getData()));
 		
 	}
 	
@@ -155,27 +159,30 @@ public class Client implements Runnable{
 		DatagramPacket packet = new DatagramPacket(msgInBytes, msgInBytes.length, address, 25565);
 		try {
 			this.socket.send(packet);
-		} catch (IOException e) {
+			this.logger.log("OUT - " + msg);
+		} catch (IOException | NullPointerException e) {
 			e.printStackTrace();
+			System.out.println(e.getMessage());
 		}
+		
 	}
 	
-//	List<InetAddress> listAllBroadcastAddresses() throws SocketException {
-//	    List<InetAddress> broadcastList = new ArrayList<>();
-//	    Enumeration<NetworkInterface> interfaces 
-//	      = NetworkInterface.getNetworkInterfaces();
-//	    while (interfaces.hasMoreElements()) {
-//	        NetworkInterface networkInterface = interfaces.nextElement();
-//	 
-//	        if (networkInterface.isLoopback() || !networkInterface.isUp()) {
-//	            continue;
-//	        }
-//	 
-//	        networkInterface.getInterfaceAddresses().stream() 
-//	          .map(a -> a.getBroadcast())
-//	          .filter(Objects::nonNull)
-//	          .forEach(broadcastList::add);
-//	    }
-//	    return broadcastList;
-//	}
+	List<InetAddress> listAllBroadcastAddresses() throws SocketException {
+	    List<InetAddress> broadcastList = new ArrayList<>();
+	    Enumeration<NetworkInterface> interfaces 
+	      = NetworkInterface.getNetworkInterfaces();
+	    while (interfaces.hasMoreElements()) {
+	        NetworkInterface networkInterface = interfaces.nextElement();
+	 
+	        if (networkInterface.isLoopback() || !networkInterface.isUp()) {
+	            continue;
+	        }
+	 
+	        networkInterface.getInterfaceAddresses().stream() 
+	          .map(a -> a.getBroadcast())
+	          .filter(Objects::nonNull)
+	          .forEach(broadcastList::add);
+	    }
+	    return broadcastList;
+	}
 }

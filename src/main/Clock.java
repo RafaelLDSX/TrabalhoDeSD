@@ -20,7 +20,7 @@ public class Clock implements Runnable{
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            counter += id; // O += funciona no Double?
+            counter += id;
         }
 
     }
