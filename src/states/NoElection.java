@@ -8,11 +8,19 @@ public class NoElection implements State{
 	
 	public String answer(String msg) {
 		switch(msg) {
+		case "ELEICOES JA":
+			return msg;
 		case "Quem e o coordenador?":
-			return null;
+			return "";
+		case "":
+			return "ELEICOES JA";
+			
 		}
-		return null;
+		return "";
 	}
 	
+	public void action() {
+		//TODO
+	}
 	
 }

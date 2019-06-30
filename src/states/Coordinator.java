@@ -23,7 +23,11 @@ public class Coordinator implements State{
 			int closedBracketIndex = msg.indexOf("]");
 			countClock(Double.parseDouble(msg.substring(opennedBracketIndex, closedBracketIndex)));
 		}
-		return null;
+		return "";
+	}
+	
+	public void action() {
+		//TODO
 	}
 	
 	// The methods below will be used for calculating the new clock 

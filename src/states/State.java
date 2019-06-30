@@ -6,5 +6,7 @@ public interface State {
 	
 	public String answer(String msg);
 	
+	public void action();
+	
 	
 }

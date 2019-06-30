@@ -3,18 +3,18 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
+import java.util.Scanner;
 
+import jdk.nashorn.internal.ir.BreakableNode;
 import states.Coordinator;
 import states.Election;
 import states.NoElection;
@@ -50,7 +50,7 @@ public class Client implements Runnable{
 		this.id = id;
 		socket = new DatagramSocket(25565);
 		socket.setBroadcast(true);
-//		socket.setSoTimeout(3000);
+		socket.setSoTimeout(3000);
 		broadcastAddresses = this.listAllBroadcastAddresses();
 		state = new NoElection(); 
 		clock = new Clock(id);
@@ -64,46 +64,34 @@ public class Client implements Runnable{
 		boolean running = true;
 		Random random = new Random();
 
-		/*
-		while(true){
-			System.out.println("Relogio" + clock.getCounter());
-			try {
-				sleep(3000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+		Scanner scanner = new Scanner(System.in);
+		System.out.println("Enter one of the following:");
+		System.out.println("1 - Listen");
+		System.out.println("2 - Ask for coordinator");
+
+		switch(scanner.nextInt()) {
+		case 1:
+			this.listen();
+			break;
+		case 2:
+			this.ask();
+			break;
 		}
-		*/
-
-//		while(running){
-//			this.ask();
-//			this.listen();
-//			
-//			if(this.state == Coordinator) {
-//				if(this.state.berkFlag == false) {
-//					state.ask();
-//			  	}
-//			  	else if(this.state.berkFlag == true) {
-//			 		state.averageClock(clock);
-//			  	}
-//			}
-//			 
-//		}
 		
-//		for(InetAddress i : broadcastAddresses) {
-//			this.sendMessage("alou", i);
-//		}
-		this.ask();
+		while(running) {
+			this.action();
+		}
 
+		scanner.close();
 		socket.close();
 
 	}
 	
 	public void ask() {
 		String toSend = state.ask();
-		if(toSend != null) {
+		if(toSend != null && !toSend.equals("")) {
 			if(toSend.contains("ID")) {
-				toSend.replace("ID", this.id.toString() );
+				toSend = toSend.replace("ID", this.id.toString() );
 			}
 			for(InetAddress i : this.broadcastAddresses) {
 				this.sendMessage(toSend, i);
@@ -114,43 +102,73 @@ public class Client implements Runnable{
 	public void answer(String msg) {
 		String toSend = state.answer(msg);
 		if(toSend.contains("RELOGIO")) {
-			toSend.replace("RELOGIO", clock.getCounter().toString() );
+			toSend = toSend.replace("RELOGIO", clock.getCounter().toString() );
 		}
 		else if (toSend.equals("Perdi")) { 
-			changeState("NotCoordinator");
-			toSend = null;
+			changeState(new NotCoordinator());
+			toSend = "";
 		}
-		if(toSend != null) {
-			//TODO send message()
+		else if(toSend.equals("ELEICOES JA")){
+			changeState(new Election(this.getId()));
 		}
+		else if(toSend.equals("Venci")) {
+			changeState(new Coordinator(this.getId()));
+			toSend = "Coordenador: [" + this.getId() + "]";
+		}
+		
+		if(toSend != null && !toSend.equals("")) {
+			for(InetAddress i : this.broadcastAddresses)
+			this.sendMessage(toSend, i);
+		}
+		
 	}
 
 	public void listen() {
 		byte[] buf = new byte[255];
 		DatagramPacket packet = new DatagramPacket(buf, buf.length);
+		
 		try {
+			
 			System.out.println("Ouvindo");
 			this.socket.receive(packet);
+			
+			//se não receber uma mensagem de si mesmo, prosseguir normalmente
+			if(!packet.getAddress().getHostAddress().equals(InetAddress.getLocalHost().getHostAddress())) {
+				String parsed = Parser.toString(packet.getData());
+				this.logger.log("IN - " + parsed);
+				this.answer(parsed);
+			} 
+			
+			//se a mensagem for de si mesmo, ignorar e tentar ouvir mensagem de outro processo
+			else {
+				this.listen();
+			}
+			
+		} catch (SocketTimeoutException e) {
+			this.answer("");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		this.logger.log("IN - " + Parser.toString(packet.getData()));
+		
+		
+		
 		
 	}
 	
-	public void changeState(String nextState) {
-		if(nextState.equals("Election")) {
-			state = new Election(this.id);
+	public void action() {
+		this.ask();
+		try {
+			this.socket.setSoTimeout(3000);
+		} catch (SocketException e) {
+			e.printStackTrace();
 		}
-		else if(nextState.equals("NotCoordinator")) {
-			state = new NotCoordinator();
-		}
-		else if(nextState.equals("Coordinator")) {
-			state = new Coordinator(this.id);
-		}
-		else {
-			//TODO exception
-		}		
+		
+		this.listen();
+	
+	}
+	
+	public void changeState(State state) {
+		this.state = state;	
 		
 	}
 	

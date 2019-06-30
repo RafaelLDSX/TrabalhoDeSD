@@ -10,21 +10,24 @@ public class Logger {
 	
 	private File file;
 	private FileWriter writer;
+	private DateTimeFormatter formatter;
 	
 	public Logger() {
+		formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy - HH-mm-ss");
 		try {
-			this.file = new File("log.log");
+			this.file = new File(LocalDateTime.now().format(formatter) + ".log");
 			this.writer = new FileWriter(this.file);
 		}
 		catch(IOException | NullPointerException e) {
 			e.printStackTrace();
 		}
+		formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 	}
 	
 	public void log(String msg) {
-		DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+		
 		try {
-			this.writer.write(LocalDateTime.now().format(fmt) + " - " + msg + "\n");
+			this.writer.write(LocalDateTime.now().format(formatter) + " - " + msg + "\n");
 			this.writer.flush();
 		} catch (IOException e) {
 			e.printStackTrace();
