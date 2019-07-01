@@ -14,7 +14,6 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.Scanner;
 
-import jdk.nashorn.internal.ir.BreakableNode;
 import states.Coordinator;
 import states.Election;
 import states.NoElection;
@@ -36,6 +35,7 @@ public class Client implements Runnable{
 	private Clock clock;
 	private Thread clockThread;
 	private Logger logger;
+	private InetAddress myAddress;
 	
 	
 	public int getId() {
@@ -57,6 +57,18 @@ public class Client implements Runnable{
 		clockThread = new Thread(clock);
 		clockThread.start();
 		logger = new Logger();
+		byte[] buffer = new byte[255];
+		DatagramPacket pkt = new DatagramPacket(buffer, buffer.length);
+		try {
+			for(InetAddress i : this.broadcastAddresses) {
+				this.sendMessage("soueu", i);
+			}
+			socket.receive(pkt);
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+		}
+		myAddress = pkt.getAddress();
+		
 	}
 	
 	public void run(){
@@ -118,7 +130,7 @@ public class Client implements Runnable{
 		
 		if(toSend != null && !toSend.equals("")) {
 			for(InetAddress i : this.broadcastAddresses)
-			this.sendMessage(toSend, i);
+				this.sendMessage(toSend, i);
 		}
 		
 	}
@@ -132,8 +144,8 @@ public class Client implements Runnable{
 			System.out.println("Ouvindo");
 			this.socket.receive(packet);
 			
-			//se não receber uma mensagem de si mesmo, prosseguir normalmente
-			if(!packet.getAddress().getHostAddress().equals(InetAddress.getLocalHost().getHostAddress())) {
+			//se nï¿½o receber uma mensagem de si mesmo, prosseguir normalmente
+			if(!packet.getAddress().getHostAddress().equals(myAddress.getHostAddress())) {
 				String parsed = Parser.toString(packet.getData());
 				this.logger.log("IN - " + parsed);
 				this.answer(parsed);
