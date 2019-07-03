@@ -34,8 +34,8 @@ public class Election implements State{
 		else if(msg.contains("Coordenador")) {
 			return "Perdi";
 		}
-		
-		return this.silenceCounter > 5 ? "Venci" : "";
+
+		return this.silenceCounter > 1 ? "Venci" : "";
 	}
 
 	public String comparison(Integer receivedId) {

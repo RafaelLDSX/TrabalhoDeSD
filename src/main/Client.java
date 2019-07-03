@@ -41,6 +41,8 @@ public class Client implements Runnable{
 	public int getId() {
 		return this.id;
 	}
+	public State getState() { return this.state; }
+	public Clock getClock() { return this.clock; }
 	
 	public boolean IsCoordinator() {
 		return isCoordinator;
@@ -117,15 +119,20 @@ public class Client implements Runnable{
 			toSend = toSend.replace("RELOGIO", clock.getCounter().toString() );
 		}
 		else if (toSend.equals("Perdi")) { 
-			changeState(new NotCoordinator());
+			changeState(new NotCoordinator(this));
 			toSend = "";
 		}
 		else if(toSend.equals("ELEICOES JA")){
 			changeState(new Election(this.getId()));
 		}
 		else if(toSend.equals("Venci")) {
-			changeState(new Coordinator(this.getId()));
-			toSend = "Coordenador: [" + this.getId() + "]";
+			System.out.println("Processo " + id + " - Foi selecionado como Coordenador");
+			changeState(new Coordinator(this.getId(), this));
+			toSend = state.answer("Comecar Berkley");
+			System.out.println("Processo " + id + " - Decidiu começar Berkley");
+		}
+		else if(toSend.contains("Valor da media e [")){
+
 		}
 		
 		if(toSend != null && !toSend.equals("")) {
