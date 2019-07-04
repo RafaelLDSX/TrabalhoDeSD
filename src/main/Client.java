@@ -155,8 +155,10 @@ public class Client implements Runnable{
 			this.socket.receive(packet);
 			
 			//se nao receber uma mensagem de si mesmo, prosseguir normalmente
-			if(!packet.getAddress().getHostAddress().equals(myAddress.getHostAddress())) {
-				String parsed = Parser.toString(packet.getData());
+			String checkId = "ID: " + this.id.toString();
+			String parsed = Parser.toString(packet.getData());
+			if(!parsed.contains(checkId)) {
+				//String parsed = Parser.toString(packet.getData());
 				this.logger.log("IN - " + parsed);
 				parsed = parsed.replaceAll("[0-9]+", "");
 				parsed = parsed.replace("ID:  - ", "");
