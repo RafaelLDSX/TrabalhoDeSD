@@ -16,13 +16,13 @@ public class NotCoordinator implements State{
 	}
 
 	public String answer(String msg) {
-		if(msg.equals("Qual seu relogio?")) {
+		if(msg.contains("Qual seu relogio?")) {
 			return "Meu relogio e [RELOGIO]";
 		}
 		else if(msg.contains("Valor da media e [")){
 			int opennedBracketIndex = msg.indexOf("[");
 			int closedBracketIndex = msg.indexOf("]");
-			String toProcess = msg.substring(opennedBracketIndex, closedBracketIndex);
+			String toProcess = msg.substring(opennedBracketIndex+1, closedBracketIndex);
 			int average = Integer.parseInt(toProcess);
 			adjustClock(average);
 		}

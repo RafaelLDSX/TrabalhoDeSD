@@ -38,7 +38,7 @@ public class Coordinator implements State{
 		else if(msg.contains("Meu relogio e")) {
 			int opennedBracketIndex = msg.indexOf("[");
 			int closedBracketIndex = msg.indexOf("]");
-			countClock(Double.parseDouble(msg.substring(opennedBracketIndex, closedBracketIndex)));
+			countClock(Double.parseDouble(msg.substring(opennedBracketIndex+1, closedBracketIndex)));
 		}
 		else if(msg.contains("Enviar media")){
 			int average = averageClock(client.getClock().getCounter()).intValue();

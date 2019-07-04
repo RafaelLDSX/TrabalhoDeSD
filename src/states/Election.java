@@ -25,7 +25,7 @@ public class Election implements State{
 			this.silenceCounter = 0;
 			int opennedBracketIndex = msg.indexOf("[");
 			int closedBracketIndex = msg.indexOf("]");
-			String toProcess = msg.substring(opennedBracketIndex, closedBracketIndex);
+			String toProcess = msg.substring(opennedBracketIndex+1, closedBracketIndex);
 			return comparison(Integer.parseInt(toProcess));
 		}
 		else if(msg.equals("")) {
@@ -34,8 +34,11 @@ public class Election implements State{
 		else if(msg.contains("Coordenador")) {
 			return "Perdi";
 		}
+		else if(msg.contains("ELEICOES JA")){
+			return "Meu id e [ID]";
+		}
 
-		return this.silenceCounter > 1 ? "Venci" : "";
+		return this.silenceCounter > 5 ? "Venci" : "";
 	}
 
 	public String comparison(Integer receivedId) {

@@ -134,6 +134,11 @@ public class Client implements Runnable{
 			toSend = state.answer("Comecar Berkley");
 			System.out.println("Processo " + id + " - Decidiu comecar Berkley");
 		}
+		else if(toSend.contains("Meu id e")){
+                if(toSend.contains("[ID]")) {
+                    toSend = toSend.replace("ID", this.id.toString() );
+                }
+        }
 		else if(toSend.contains("Valor da media e [")){
 
 		}
@@ -160,9 +165,8 @@ public class Client implements Runnable{
 			if(!parsed.contains(checkId)) {
 				//String parsed = Parser.toString(packet.getData());
 				this.logger.log("IN - " + parsed);
-				parsed = parsed.replaceAll("[0-9]+", "");
-				parsed = parsed.replace("ID:  - ", "");
-				System.out.println(parsed);
+                System.out.println(parsed);
+				parsed = parsed.replaceAll("ID: [0-9]+ - ", "");
 				this.answer(parsed);
 			} 
 			
@@ -183,7 +187,7 @@ public class Client implements Runnable{
 	}
 	
 	public void action() {
-		this.ask();
+
 		try {
 			this.socket.setSoTimeout(3000);
 		} catch (SocketException e) {
@@ -200,8 +204,8 @@ public class Client implements Runnable{
 	}
 	
 	public void sendMessage(String msg, InetAddress address) {
+        msg = "ID: " + this.id.toString() + " - " + msg;
 		byte[] msgInBytes = Parser.toBytes(msg);
-		msg = "ID: " + this.id.toString() + " - " + msg; 
 		DatagramPacket packet = new DatagramPacket(msgInBytes, msgInBytes.length, address, 25565);
 		try {
 			this.socket.send(packet);
