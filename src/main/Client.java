@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -50,7 +51,9 @@ public class Client implements Runnable{
 	
 	public Client(int id) throws SocketException, UnknownHostException{
 		this.id = id;
-		socket = new DatagramSocket(25565);
+		socket = new DatagramSocket(null);
+		socket.setReuseAddress(true);
+		socket.bind(new InetSocketAddress(25565));
 		socket.setBroadcast(true);
 		socket.setSoTimeout(3000);
 		broadcastAddresses = this.listAllBroadcastAddresses();
@@ -63,7 +66,7 @@ public class Client implements Runnable{
 		DatagramPacket pkt = new DatagramPacket(buffer, buffer.length);
 		try {
 			for(InetAddress i : this.broadcastAddresses) {
-				this.sendMessage("soueu", i);
+				this.sendMessage("Sou eu", i);
 			}
 			socket.receive(pkt);
 		} catch (IOException e) {
@@ -129,7 +132,7 @@ public class Client implements Runnable{
 			System.out.println("Processo " + id + " - Foi selecionado como Coordenador");
 			changeState(new Coordinator(this.getId(), this));
 			toSend = state.answer("Comecar Berkley");
-			System.out.println("Processo " + id + " - Decidiu começar Berkley");
+			System.out.println("Processo " + id + " - Decidiu comecar Berkley");
 		}
 		else if(toSend.contains("Valor da media e [")){
 
@@ -151,7 +154,7 @@ public class Client implements Runnable{
 			System.out.println("Ouvindo");
 			this.socket.receive(packet);
 			
-			//se n�o receber uma mensagem de si mesmo, prosseguir normalmente
+			//se nao receber uma mensagem de si mesmo, prosseguir normalmente
 			if(!packet.getAddress().getHostAddress().equals(myAddress.getHostAddress())) {
 				String parsed = Parser.toString(packet.getData());
 				this.logger.log("IN - " + parsed);
