@@ -7,14 +7,14 @@ public class NoElection implements State{
 	}
 	
 	public String answer(String msg) {
-		switch(msg) {
-		case "ELEICOES JA":
+		if(msg.contains("ELEICOES JA")) {
 			return msg;
-		case "Quem e o coordenador?":
+		}
+		else if(msg.contains("Quem e o coordenador?")) {
 			return "";
-		case "":
+		}
+		else if(msg.equals("")) {
 			return "ELEICOES JA";
-			
 		}
 		return "";
 	}
